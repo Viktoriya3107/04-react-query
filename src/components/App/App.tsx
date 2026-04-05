@@ -4,12 +4,18 @@ import ReactPaginate from "react-paginate";
 
 import { fetchMovies } from "../../services/movieService";
 import SearchBar from "../SearchBar/SearchBar";
-import MovieList from "../MovieList/MovieList";
+import MovieGrid from "../MovieGrid/MovieGrid";
+import Loader from "../Loader/Loader";
+import ErrorMessage from "../ErrorMessage/ErrorMessage";
+import MovieModal from "../MovieModal/MovieModal";
+
 import css from "./App.module.css";
+import type { Movie } from "../../types/movie";
 
 export default function App() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["movies", query, page],
@@ -28,10 +34,15 @@ export default function App() {
     <div>
       <SearchBar onSubmit={handleSearch} />
 
-      {isLoading && <p>Loading...</p>}
-      {isError && <p>Error occurred</p>}
+      {isLoading && <Loader />}
+      {isError && <ErrorMessage />}
 
-      {data && <MovieList movies={data.results} />}
+      {data && (
+        <MovieGrid
+          movies={data.results}
+          onMovieClick={(movie) => setSelectedMovie(movie)}
+        />
+      )}
 
       {totalPages > 1 && (
         <ReactPaginate
@@ -46,6 +57,8 @@ export default function App() {
           previousLabel="←"
         />
       )}
+
+      <MovieModal movie={selectedMovie} onClose={() => setSelectedMovie(null)} />
     </div>
   );
 }

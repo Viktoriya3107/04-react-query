@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { MovieResponse } from "../types/movie";
 
-const API_KEY = "9913175b4e6739416cb28494d28a669a"; 
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const BASE_URL = "https://api.themoviedb.org/3";
 
 export const fetchMovies = async (

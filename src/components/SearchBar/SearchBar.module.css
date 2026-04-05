@@ -1,7 +1,10 @@
 .form {
     margin-bottom: 16px;
+    text-align: center;
 }
 
 .input {
     margin-right: 8px;
+    padding: 4px 8px;
+    width: 200px;
 }
