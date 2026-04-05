@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ReactPaginate from "react-paginate";
 import { toast, Toaster } from "react-hot-toast";
 
@@ -23,12 +23,17 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery<MoviesData, Error>({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: query !== "",
-    placeholderData: { results: [], total_pages: 0 }, // заміна keepPreviousData
+    placeholderData: (): MoviesData =>
+      queryClient.getQueryData<MoviesData>(["movies", query, page - 1]) ?? {
+        results: [],
+        total_pages: 0,
+      },
   });
 
   useEffect(() => {
