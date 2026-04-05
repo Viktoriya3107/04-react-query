@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import ReactPaginate from "react-paginate";
 import { toast, Toaster } from "react-hot-toast";
 
-import { fetchMovies } from "../../services/movieService";
+import { fetchMovies, type MovieResponse } from "../../services/movieService";
+import type { Movie } from "../../types/movie";
+
 import SearchBar from "../SearchBar/SearchBar";
 import MovieGrid from "../MovieGrid/MovieGrid";
 import MovieModal from "../MovieModal/MovieModal";
@@ -11,24 +13,22 @@ import Loader from "../Loader/Loader";
 import ErrorMessage from "../ErrorMessage/ErrorMessage";
 
 import css from "./App.module.css";
-import type { Movie, MovieResponse } from "../../types/movie";
 
 export default function App() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  // --- useQuery з типізацією MovieResponse ---
-  const { data, isLoading, isError } = useQuery<MovieResponse>({
+  // Використовуємо react-query для запиту
+  const { data, isLoading, isError } = useQuery<MovieResponse, Error>({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: query !== "",
-    placeholderData: { results: [], page: 1, total_pages: 0 },
   });
 
-  // --- toast, якщо не знайдено фільмів ---
+  // Показ toast, якщо нічого не знайдено
   useEffect(() => {
-    if (data && data.results.length === 0 && query) {
+    if (data?.results.length === 0 && query) {
       toast.error("No movies found for this query");
     }
   }, [data, query]);
@@ -39,22 +39,30 @@ export default function App() {
   };
 
   const totalPages = data?.total_pages ?? 0;
+  const movies = data?.results ?? [];
 
   return (
     <div>
       <Toaster />
+      
+      {/* Пошук */}
       <SearchBar onSubmit={handleSearch} />
 
+      {/* Стани завантаження/помилки */}
       {isLoading && <Loader />}
-      {isError && <ErrorMessage />}
+      {isError && <ErrorMessage message="Could not load movies" />}
 
-      {data && (
-        <MovieGrid
-          movies={data.results}
-          onSelect={(movie) => setSelectedMovie(movie)}
+      {/* Сітка фільмів */}
+      {movies.length > 0 ? (
+        <MovieGrid 
+          movies={movies} 
+          onSelect={(movie: Movie) => setSelectedMovie(movie)} 
         />
+      ) : (
+        !isLoading && query && <p>No movies found</p>
       )}
 
+      {/* Пагінація */}
       {totalPages > 1 && (
         <ReactPaginate
           pageCount={totalPages}
@@ -69,7 +77,11 @@ export default function App() {
         />
       )}
 
-      <MovieModal movie={selectedMovie} onClose={() => setSelectedMovie(null)} />
+      {/* Модалка фільму */}
+      <MovieModal 
+        movie={selectedMovie} 
+        onClose={() => setSelectedMovie(null)} 
+      />
     </div>
   );
 }
