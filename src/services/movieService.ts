@@ -8,9 +8,11 @@ export const fetchMovies = async (
   query: string,
   page: number
 ): Promise<MovieResponse> => {
-  const { data } = await axios.get(`${BASE_URL}/search/movie`, {
+  const { data } = await axios.get<MovieResponse>(`${BASE_URL}/search/movie`, {
+    headers: {
+      Authorization: `Bearer ${API_KEY}`,
+    },
     params: {
-      api_key: API_KEY,
       query,
       page,
     },
