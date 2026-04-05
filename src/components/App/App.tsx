@@ -25,7 +25,7 @@ export default function App() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError } = useQuery<MoviesData, Error>({
+  const { data, isLoading, isError, isSuccess, isFetching } = useQuery<MoviesData, Error>({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: query !== "",
@@ -37,10 +37,10 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (data?.results.length === 0 && query) {
+    if (isSuccess && data?.results.length === 0 && query) {
       toast.error("Фільми за цим запитом не знайдено");
     }
-  }, [data, query]);
+  }, [data, query, isSuccess]);
 
   const handleSearch = (newQuery: string) => {
     setQuery(newQuery);
@@ -54,24 +54,31 @@ export default function App() {
     <div>
       <Toaster />
       <SearchBar onSubmit={handleSearch} />
-      {isLoading && <Loader />}
+
+      {/* Індикація завантаження */}
+      {(isLoading || (isFetching && !isLoading)) && <Loader />}
+
+      {/* Помилка завантаження */}
       {isError && <ErrorMessage message="Не вдалося завантажити фільми" />}
-      {movies.length > 0 ? (
+
+      {/* Відображення фільмів */}
+      {isSuccess && movies.length > 0 && (
         <MovieGrid
           movies={movies}
           onSelect={(movie: Movie) => setSelectedMovie(movie)}
         />
-      ) : (
-        !isLoading && query && <p>Фільми за цим запитом не знайдено</p>
       )}
+
+      {/* Порожній результат */}
+      {isSuccess && movies.length === 0 && <p>Фільми за цим запитом не знайдено</p>}
+
+      {/* Пагінація */}
       {totalPages > 1 && (
         <ReactPaginate
           pageCount={totalPages}
           pageRangeDisplayed={5}
           marginPagesDisplayed={1}
-          onPageChange={(event: { selected: number }) =>
-            setPage(event.selected + 1)
-          }
+          onPageChange={(event: { selected: number }) => setPage(event.selected + 1)}
           forcePage={page - 1}
           containerClassName={css.pagination}
           activeClassName={css.active}
@@ -79,10 +86,14 @@ export default function App() {
           previousLabel="←"
         />
       )}
-      <MovieModal
-        movie={selectedMovie}
-        onClose={() => setSelectedMovie(null)}
-      />
+
+      {/* Модальне вікно тільки при вибраному фільмі */}
+      {selectedMovie && (
+        <MovieModal
+          movie={selectedMovie}
+          onClose={() => setSelectedMovie(null)}
+        />
+      )}
     </div>
   );
 }
