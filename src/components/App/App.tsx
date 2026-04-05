@@ -14,15 +14,21 @@ import ErrorMessage from "../ErrorMessage/ErrorMessage";
 
 import css from "./App.module.css";
 
+interface MoviesData {
+  results: Movie[];
+  total_pages: number;
+}
+
 export default function App() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError } = useQuery<MoviesData, Error>({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: query !== "",
+    placeholderData: { results: [], total_pages: 0 }, // заміна keepPreviousData
   });
 
   useEffect(() => {
@@ -36,18 +42,15 @@ export default function App() {
     setPage(1);
   };
 
-  const totalPages = data?.total_pages ?? 0;
   const movies = data?.results ?? [];
+  const totalPages = data?.total_pages ?? 0;
 
   return (
     <div>
       <Toaster />
-
       <SearchBar onSubmit={handleSearch} />
-
       {isLoading && <Loader />}
       {isError && <ErrorMessage message="Не вдалося завантажити фільми" />}
-
       {movies.length > 0 ? (
         <MovieGrid
           movies={movies}
@@ -56,7 +59,6 @@ export default function App() {
       ) : (
         !isLoading && query && <p>Фільми за цим запитом не знайдено</p>
       )}
-
       {totalPages > 1 && (
         <ReactPaginate
           pageCount={totalPages}
@@ -72,8 +74,10 @@ export default function App() {
           previousLabel="←"
         />
       )}
-
-      <MovieModal movie={selectedMovie} onClose={() => setSelectedMovie(null)} />
+      <MovieModal
+        movie={selectedMovie}
+        onClose={() => setSelectedMovie(null)}
+      />
     </div>
   );
 }
