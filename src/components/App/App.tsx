@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import ReactPaginate from "react-paginate";
 import { toast, Toaster } from "react-hot-toast";
 
-import { fetchMovies, type MovieResponse } from "../../services/movieService";
+import { fetchMovies } from "../../services/movieService";
 import type { Movie } from "../../types/movie";
 
 import SearchBar from "../SearchBar/SearchBar";
@@ -19,17 +19,15 @@ export default function App() {
   const [page, setPage] = useState(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  // Використовуємо react-query для запиту
-  const { data, isLoading, isError } = useQuery<MovieResponse, Error>({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: query !== "",
   });
 
-  // Показ toast, якщо нічого не знайдено
   useEffect(() => {
     if (data?.results.length === 0 && query) {
-      toast.error("No movies found for this query");
+      toast.error("Фільми за цим запитом не знайдено");
     }
   }, [data, query]);
 
@@ -44,31 +42,29 @@ export default function App() {
   return (
     <div>
       <Toaster />
-      
-      {/* Пошук */}
+
       <SearchBar onSubmit={handleSearch} />
 
-      {/* Стани завантаження/помилки */}
       {isLoading && <Loader />}
-      {isError && <ErrorMessage message="Could not load movies" />}
+      {isError && <ErrorMessage message="Не вдалося завантажити фільми" />}
 
-      {/* Сітка фільмів */}
       {movies.length > 0 ? (
-        <MovieGrid 
-          movies={movies} 
-          onSelect={(movie: Movie) => setSelectedMovie(movie)} 
+        <MovieGrid
+          movies={movies}
+          onSelect={(movie: Movie) => setSelectedMovie(movie)}
         />
       ) : (
-        !isLoading && query && <p>No movies found</p>
+        !isLoading && query && <p>Фільми за цим запитом не знайдено</p>
       )}
 
-      {/* Пагінація */}
       {totalPages > 1 && (
         <ReactPaginate
           pageCount={totalPages}
           pageRangeDisplayed={5}
           marginPagesDisplayed={1}
-          onPageChange={({ selected }) => setPage(selected + 1)}
+          onPageChange={(event: { selected: number }) =>
+            setPage(event.selected + 1)
+          }
           forcePage={page - 1}
           containerClassName={css.pagination}
           activeClassName={css.active}
@@ -77,11 +73,7 @@ export default function App() {
         />
       )}
 
-      {/* Модалка фільму */}
-      <MovieModal 
-        movie={selectedMovie} 
-        onClose={() => setSelectedMovie(null)} 
-      />
+      <MovieModal movie={selectedMovie} onClose={() => setSelectedMovie(null)} />
     </div>
   );
 }
